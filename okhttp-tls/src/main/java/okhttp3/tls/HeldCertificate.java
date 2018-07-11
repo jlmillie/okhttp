@@ -208,7 +208,7 @@ public final class HeldCertificate {
     private BigInteger serialNumber;
     private KeyPair keyPair;
     private HeldCertificate issuedBy;
-    private int maxIntermediateCas;
+    private int maxIntermediateCas = -1;
 
     /**
      * Sets the certificate to be valid in {@code [notBefore..notAfter]}. Both endpoints are
@@ -302,8 +302,14 @@ public final class HeldCertificate {
     /**
      * Set this certificate to be a signing certificate, with up to {@code maxIntermediateCas}
      * intermediate signing certificates beneath it.
+     *
+     * <p>If unset, this certificate cannot not sign other certificates. If set to 0, this
+     * certificate can sign other certificates, but those cannot.
      */
     public Builder certificateAuthority(int maxIntermediateCas) {
+      if (maxIntermediateCas < 0) {
+        throw new IllegalArgumentException("maxIntermediateCas < 0: " + maxIntermediateCas);
+      }
       this.maxIntermediateCas = maxIntermediateCas;
       return this;
     }
@@ -340,7 +346,7 @@ public final class HeldCertificate {
       generator.setPublicKey(heldKeyPair.getPublic());
       generator.setSignatureAlgorithm("SHA256WithRSAEncryption");
 
-      if (maxIntermediateCas > 0) {
+      if (maxIntermediateCas != -1) {
         generator.addExtension(X509Extensions.BasicConstraints, true,
             new BasicConstraints(maxIntermediateCas));
       }
